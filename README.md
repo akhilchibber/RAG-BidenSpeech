@@ -1,4 +1,4 @@
-# Retrieval-Augmented Generation (RAG) to analyze and respond to queries about President Biden's 2023 State of the Union (SOTU) Address
+# Retrieval-Augmented Generation (RAG) based President Biden's Speech 2023
 <p align="center">
   <img src="https://github.com/akhilchibber/RAG-BidenSpeech/blob/main/President_Biden.png?raw=true" alt="earthml Logo">
 </p>
