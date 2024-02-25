@@ -16,6 +16,9 @@ The goal is to develop a Q&A system capable of delivering informed responses on 
 
 ### Functionality
 The system retrieves information from ChromaDB based on user queries about the SOTU address, then uses Llama 2.0 to generate responses. This ensures accuracy and broader contextual understanding, resulting in precise and enriched answers.
+<p align="center">
+  <img src="https://github.com/akhilchibber/RAG-BidenSpeech/blob/main/RAG.png?raw=true" alt="earthml Logo">
+</p>
 
 ### Use Case
 Ideal for researchers, journalists, educators, and the public for exploring political speeches via natural language queries. It showcases how retrieval and generation can be integrated in NLP to improve information access and understanding.
