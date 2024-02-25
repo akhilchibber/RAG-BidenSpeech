@@ -6,21 +6,21 @@
 ## Dataset
 The dataset used in this project can be found on Kaggle: [President Biden Speech Dataset](https://www.kaggle.com/datasets/whegedusich/president-bidens-state-of-the-union-2023/data). 
 
-### Objective
+## Objective
 The goal is to develop a Q&A system capable of delivering informed responses on the content of President Biden's address, demonstrating RAG's application in combining semantic data retrieval with generative language models for NLP analysis in political discourse.
 
-### Key Components
+## Key Components
 - **Llama 2.0**: Employs for generating text responses that mimic human conversation.
 - **ChromaDB**: Acts as a vector database for storing and retrieving speech data semantically.
 - **LangChain**: Orchestrates the interaction between Llama 2.0 and ChromaDB, facilitating the RAG process.
 
-### Functionality
+## Functionality
 The system retrieves information from ChromaDB based on user queries about the SOTU address, then uses Llama 2.0 to generate responses. This ensures accuracy and broader contextual understanding, resulting in precise and enriched answers.
 <p align="center">
   <img src="https://github.com/akhilchibber/RAG-BidenSpeech/blob/main/RAG.png?raw=true" alt="earthml Logo">
 </p>
 
-### Use Case
+## Use Case
 Ideal for researchers, journalists, educators, and the public for exploring political speeches via natural language queries. It showcases how retrieval and generation can be integrated in NLP to improve information access and understanding.
 
 ## Getting Started
