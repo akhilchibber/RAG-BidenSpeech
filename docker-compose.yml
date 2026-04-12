@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  rag-chatbot:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - FLASK_ENV=production
+    volumes:
+      - ./RAG-BidenSpeech:/app/RAG-BidenSpeech
+    restart: unless-stopped
