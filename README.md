@@ -52,3 +52,5 @@ Author: Akhil Chhibber
 LinkedIn: https://www.linkedin.com/in/akhilchhibber/
 
 Medium Blogs: https://medium.com/@akhil.chibber
+
+Live Deployment: https://rag-biden-speech--akhilchibber.replit.app/
