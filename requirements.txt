@@ -2,6 +2,6 @@ langchain==0.1.0
 groq==0.4.1
 python-dotenv==1.0.0
 supabase==2.3.5
-sentence-transformers==2.2.2
+google-generativeai==0.3.0
 flask==3.0.0
 flask-cors==4.0.0

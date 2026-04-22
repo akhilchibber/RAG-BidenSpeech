@@ -31,8 +31,39 @@ To get started with this project:
 2. Install the required dependencies: `pip install -r requirements.txt`
 3. Configure your API keys in `.env` file (see `.env.example`)
 4. Setup Supabase database (see ARCHITECTURE.md for SQL setup)
-5. Index the speech: `python chatbot_final.py index`
-6. Run the chatbot: `python chatbot_final.py` (CLI) or `python app.py` (Web)
+5. **Run the setup script to index the speech**: `python setup_biden_rag.py`
+6. Visit the live demo: https://akhilchibber.github.io/RAG-BidenSpeech/
+
+### Setup Instructions
+
+#### Step 1: Get API Keys
+- **Groq API**: Sign up at https://console.groq.com and get your API key
+- **Google AI Studio**: Get your API key from https://makersuite.google.com/app/apikey
+- **Supabase**: Create a project at https://supabase.com and get your URL and key
+
+#### Step 2: Create Supabase Table
+Run this SQL in your Supabase database:
+```sql
+CREATE TABLE biden_speech_chunks (
+  id BIGSERIAL PRIMARY KEY,
+  content TEXT NOT NULL,
+  embedding vector(768),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX ON biden_speech_chunks USING ivfflat (embedding vector_cosine_ops);
+```
+
+#### Step 3: Index the Speech
+```bash
+python setup_biden_rag.py
+```
+
+This will:
+- Read the Biden speech documents
+- Generate embeddings using Google AI
+- Store them in Supabase
+- Make the chatbot ready to answer questions
 
 ## Contributing
 We welcome contributions to enhance the functionality and efficiency of this script. Feel free to fork, modify, and make pull requests to this repository. To contribute:
