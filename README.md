@@ -11,8 +11,8 @@ The goal is to develop a Q&A system capable of delivering informed responses on 
 
 ## Key Components
 - **Groq LLM**: Employs llama-3.3-70b-versatile for generating text responses that mimic human conversation.
-- **Supabase**: Acts as a vector database for storing and retrieving speech data semantically.
-- **Sentence Transformers**: Generates semantic embeddings for text chunks.
+- **Supabase**: Acts as a vector database (with pgvector extension) for storing and retrieving speech data semantically.
+- **Google AI Studio**: Generates semantic embeddings for speech document chunks using Google's embedding models.
 - **LangChain**: Orchestrates the interaction between components, facilitating the RAG process.
 
 ## Functionality
@@ -53,4 +53,4 @@ LinkedIn: https://www.linkedin.com/in/akhilchhibber/
 
 Medium Blogs: https://medium.com/@akhil.chibber
 
-Live Deployment: https://rag-biden-speech--akhilchibber.replit.app/
+Live Demo: https://akhilchibber.github.io/RAG-BidenSpeech/
