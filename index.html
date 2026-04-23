@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAG-based Biden Speech Q&A Assistant</title>
+  <title>Biden SOTU 2023 RAG Assistant</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     * {
@@ -45,7 +45,7 @@
       width: 2.25rem;
       height: 2.25rem;
       border-radius: 50%;
-      background: #dc2626;
+      background: #2563eb;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -72,6 +72,7 @@
       gap: 0.5rem;
       padding: 0.375rem 0.75rem;
       background: rgba(255, 255, 255, 0.1);
+      hover: rgba(255, 255, 255, 0.2);
       color: white;
       font-size: 0.75rem;
       font-weight: 500;
@@ -123,8 +124,8 @@
     }
 
     .sample-btn:hover {
-      border-color: #dc2626;
-      color: #dc2626;
+      border-color: #2563eb;
+      color: #2563eb;
     }
 
     .sample-btn:disabled {
@@ -188,7 +189,7 @@
     }
 
     .message.assistant .message-icon {
-      background: #dc2626;
+      background: #2563eb;
       color: white;
     }
 
@@ -213,7 +214,7 @@
     }
 
     .message.user .message-content {
-      background: #dc2626;
+      background: #2563eb;
       color: white;
       border-radius: 0.5rem 0.5rem 0 0.5rem;
     }
@@ -227,7 +228,7 @@
     .loading-dots span {
       width: 0.5rem;
       height: 0.5rem;
-      background: #dc2626;
+      background: #2563eb;
       border-radius: 50%;
       animation: bounce 1.4s infinite;
     }
@@ -272,7 +273,7 @@
     }
 
     .input-field:focus {
-      border-color: #dc2626;
+      border-color: #2563eb;
     }
 
     .input-field::placeholder {
@@ -282,7 +283,8 @@
     .send-btn {
       width: 2.5rem;
       height: 2.5rem;
-      background: #dc2626;
+      background: #2563eb;
+      hover: #1d4ed8;
       color: white;
       border: none;
       border-radius: 50%;
@@ -296,7 +298,7 @@
     }
 
     .send-btn:hover {
-      background: #b91c1c;
+      background: #1d4ed8;
     }
 
     .send-btn:disabled {
@@ -310,32 +312,32 @@
     <!-- Header -->
     <div class="chat-header">
       <div class="header-left">
-        <div class="header-icon">🇺🇸</div>
+        <div class="header-icon">🎤</div>
         <div class="header-text">
-          <h1>Biden Speech Q&A Assistant</h1>
-          <p>Answers from 2023 State of the Union Address</p>
+          <h1>Biden SOTU 2023 Assistant</h1>
+          <p>Answers from the official speech only</p>
         </div>
       </div>
-      <a href="https://www.kaggle.com/datasets/whegedusich/president-bidens-state-of-the-union-2023/data" target="_blank" class="download-btn">
-        📊 View Dataset
+      <a href="biden-sotu-2023-planned-official.txt" download="Biden-SOTU-2023.txt" class="download-btn">
+        ⬇️ Download Transcript
       </a>
     </div>
 
     <!-- Sample Questions -->
     <div class="sample-questions" id="sampleQuestionsContainer">
-      <button class="sample-btn" onclick="askQuestion('What did President Biden say about the economy?')">What did President Biden say about the economy?</button>
-      <button class="sample-btn" onclick="askQuestion('What were the key points about healthcare?')">What were the key points about healthcare?</button>
+      <button class="sample-btn" onclick="askQuestion('What did Biden say about job creation?')">What did Biden say about job creation?</button>
+      <button class="sample-btn" onclick="askQuestion('What is the CHIPS and Science Act?')">What is the CHIPS and Science Act?</button>
       <button class="sample-btn" onclick="askQuestion('What did Biden say about climate change?')">What did Biden say about climate change?</button>
-      <button class="sample-btn" onclick="askQuestion('What were the foreign policy highlights?')">What were the foreign policy highlights?</button>
-      <button class="sample-btn" onclick="askQuestion('What did Biden say about jobs and employment?')">What did Biden say about jobs and employment?</button>
+      <button class="sample-btn" onclick="askQuestion('What are the plans for infrastructure?')">What are the plans for infrastructure?</button>
+      <button class="sample-btn" onclick="askQuestion('What did Biden say about healthcare costs?')">What did Biden say about healthcare costs?</button>
     </div>
 
     <!-- Messages -->
     <div class="messages-container" id="messagesContainer">
       <div class="message assistant">
-        <div class="message-icon">🇺🇸</div>
+        <div class="message-icon">🎤</div>
         <div class="message-content">
-          Hi! I'm the Biden Speech Q&A Assistant. Ask me anything about President Biden's 2023 State of the Union Address. I can help you find information about economy, healthcare, foreign policy, and more!
+          Hi! I'm the Biden SOTU 2023 Assistant. Ask me anything about President Biden's 2023 State of the Union address — economy, jobs, infrastructure, healthcare, climate, education, and more.
         </div>
       </div>
     </div>
@@ -368,7 +370,7 @@
       
       const iconDiv = document.createElement('div');
       iconDiv.className = 'message-icon';
-      iconDiv.textContent = isUser ? '👤' : '🇺🇸';
+      iconDiv.textContent = isUser ? '👤' : '🎤';
       
       const contentDiv = document.createElement('div');
       contentDiv.className = 'message-content';
@@ -388,7 +390,7 @@
       
       const iconDiv = document.createElement('div');
       iconDiv.className = 'message-icon';
-      iconDiv.textContent = '🇺🇸';
+      iconDiv.textContent = '🎤';
       
       const contentDiv = document.createElement('div');
       contentDiv.className = 'message-content loading-dots';

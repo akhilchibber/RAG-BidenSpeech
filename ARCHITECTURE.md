@@ -1,292 +1,245 @@
-# RAG Chatbot Architecture & Implementation Guide
+# RAG-based Biden Speech Assistant Architecture
 
 ## System Overview
 
-This is a production-ready Retrieval-Augmented Generation (RAG) chatbot that answers questions about President Biden's 2023 State of the Union address.
+This document describes the architecture of the RAG-based Biden SOTU 2023 Assistant system. The system uses Retrieval-Augmented Generation to answer questions about President Biden's 2023 State of the Union address with high accuracy and grounding in the actual speech content.
 
-### Technology Stack
+## Components
 
-- **LLM**: Groq (llama-3.3-70b-versatile) - Free, unlimited API
-- **Embeddings**: Sentence Transformers (all-MiniLM-L6-v2) - Open source
-- **Vector DB**: Supabase (PostgreSQL + pgvector) - Free tier
-- **Backend**: Flask (Python)
-- **Frontend**: HTML/CSS/JavaScript
+### 1. Document Ingestion Layer
+- Biden's 2023 SOTU speech (`biden-sotu-2023-planned-official.txt`) is used as the baseline
+- Documents are chunked into meaningful paragraphs
+- Chunks are converted into vector embeddings using Google AI Studio embeddings API (gemini-embedding-001)
+- Embeddings are 3072-dimensional vectors for semantic understanding
 
-## Quick Setup
+### 2. Vector Database (Supabase + pgvector)
+- Stores all speech document chunks and their embeddings
+- Table: `biden_speech_chunks` with columns:
+  - `id`: Primary key
+  - `content`: Text chunk from the speech
+  - `embedding`: 3072-dimensional vector
+  - `metadata`: Source information
+  - `created_at`: Timestamp
+- Enables semantic search capabilities using cosine similarity
+- Provides fast retrieval of relevant speech sections
 
-### 1. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+### 3. Retrieval Engine
+- Accepts user queries
+- Converts queries to embeddings using Google's gemini-embedding-001 model
+- Performs semantic search to find top-k relevant speech chunks
+- Uses cosine similarity with configurable threshold (0.65)
+- Returns context for the generation layer
 
-### 2. Configure Environment
-```bash
-cp .env.example .env
-```
+### 4. Generation Layer
+- Receives user query and retrieved context
+- Uses Groq LLM (llama-3.3-70b-versatile) to generate responses
+- Ensures answers are grounded in actual speech content
+- Implements question classification:
+  - **BIDEN**: Speech-related questions → Semantic search + LLM generation
+  - **GENERAL**: Non-speech questions → Natural response with redirection
 
-Edit `.env` with:
-```
-GROQ_API_KEY=your_groq_api_key
-GROQ_MODEL=llama-3.3-70b-versatile
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_service_role_key
-```
+### 5. API Layer
+- Supabase Edge Functions for serverless execution
+- REST endpoint: `/functions/v1/biden-rag`
+- Handles CORS for cross-origin requests
+- Response formatting and delivery
 
-### 3. Setup Supabase Database
+### 6. Frontend
+- GitHub Pages static HTML interface
+- Real-time chat interface with message history
+- Sample questions for quick exploration
+- Download transcript functionality
+- Identical UI/UX to HR Assistant for consistency
 
-Go to your Supabase SQL Editor and run:
-
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-
-CREATE TABLE IF NOT EXISTS documents (
-    id BIGSERIAL PRIMARY KEY,
-    content TEXT NOT NULL,
-    embedding VECTOR(384),
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS documents_embedding_idx ON documents USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-
-CREATE OR REPLACE FUNCTION match_documents(
-    query_embedding VECTOR(384),
-    match_count INT DEFAULT 3,
-    match_threshold FLOAT DEFAULT 0.0
-) RETURNS TABLE (
-    id BIGINT,
-    content TEXT,
-    similarity FLOAT
-) LANGUAGE SQL STABLE AS $$
-    SELECT
-        documents.id,
-        documents.content,
-        1 - (documents.embedding <=> query_embedding) AS similarity
-    FROM documents
-    WHERE 1 - (documents.embedding <=> query_embedding) > match_threshold
-    ORDER BY documents.embedding <=> query_embedding
-    LIMIT match_count;
-$$;
-```
-
-### 4. Index the Speech
-```bash
-python chatbot_final.py index
-```
-
-### 5. Run the Chatbot
-
-**CLI Mode:**
-```bash
-python chatbot_final.py
-```
-
-**Web Mode:**
-```bash
-python app.py
-# Open http://localhost:5000
-```
-
-## How It Works
-
-### Indexing Phase (One-time)
-
-1. **Load Speech**: Read the Biden speech text file
-2. **Split into Chunks**: Break text into 1000-character chunks with 200-character overlap
-3. **Generate Embeddings**: Convert each chunk to a 384-dimensional semantic vector using Sentence Transformers
-4. **Store in Supabase**: Save chunks and embeddings to the vector database
-
-### Query Phase (Every question)
-
-1. **Convert Question**: Generate embedding for the user's question
-2. **Vector Search**: Query Supabase to find 3 most similar chunks using cosine similarity
-3. **Prepare Context**: Combine retrieved chunks into a context string
-4. **Generate Answer**: Send context + question to Groq LLM
-5. **Return Response**: Return answer with source citations
-
-## Data Flow Diagram
+## Data Flow
 
 ```
 User Question
     ↓
-Sentence Transformers (embed question)
+[Frontend] Send to Edge Function
     ↓
-Supabase Vector Search (cosine similarity)
+[Edge Function] Classify: BIDEN or GENERAL?
+    ├─ GENERAL → Respond naturally & redirect
+    └─ BIDEN → Continue
     ↓
-Retrieve Top 3 Chunks
+[Google API] Embed question (3072 dims)
     ↓
-Create Prompt with Context
+[Supabase] Semantic search (cosine similarity)
     ↓
-Groq LLM (generate answer)
+[Retrieve] Top-3 speech chunks
     ↓
-Return Answer + Sources
+[Groq LLM] Generate answer with context
+    ↓
+[Frontend] Display response
 ```
 
-## File Structure
+## Database Schema
 
+### biden_speech_chunks table
+```sql
+CREATE TABLE biden_speech_chunks (
+  id BIGSERIAL PRIMARY KEY,
+  content TEXT NOT NULL,
+  embedding vector(3072),
+  metadata JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE OR REPLACE FUNCTION match_biden_chunks(
+  query_embedding vector(3072),
+  match_threshold float default 0.65,
+  match_count int default 5
+)
+RETURNS TABLE (
+  id bigint,
+  content text,
+  similarity float
+)
+LANGUAGE sql stable
+AS $
+  SELECT
+    id,
+    content,
+    1 - (embedding <=> query_embedding) as similarity
+  FROM biden_speech_chunks
+  WHERE 1 - (embedding <=> query_embedding) > match_threshold
+  ORDER BY (embedding <=> query_embedding) asc
+  LIMIT match_count;
+$;
 ```
-.
-├── chatbot_final.py          # Main CLI chatbot
-├── app.py                     # Flask web server
-├── test_rag.py               # Test script
-├── requirements.txt          # Python dependencies
-├── .env.example              # Environment template
-├── .gitignore                # Git ignore rules
-├── Dockerfile                # Docker setup
-├── docker-compose.yml        # Docker Compose
-├── README.md                 # Project overview
-├── ARCHITECTURE.md           # This file
-├── templates/
-│   └── index.html           # Web UI
-└── RAG-BidenSpeech/
-    ├── biden-sotu-2023-autogenerated-transcript.txt
-    └── biden-sotu-2023-planned-official.txt
-```
 
-## API Keys Required
+## Deployment
 
-### Groq API
-1. Go to https://console.groq.com
-2. Sign up for free account
-3. Create API key
-4. Add to `.env` as `GROQ_API_KEY`
+### Frontend
+- **Platform**: GitHub Pages
+- **URL**: https://akhilchibber.github.io/RAG-BidenSpeech/
+- **Files**: `index.html` (static HTML with embedded JavaScript)
 
-### Supabase
-1. Go to https://supabase.com
-2. Create free project
-3. Go to Settings → API
-4. Copy **Service Role Secret** (not Publishable Key)
-5. Add to `.env` as `SUPABASE_KEY`
-6. Copy Project URL to `.env` as `SUPABASE_URL`
+### Backend
+- **Platform**: Supabase Edge Functions
+- **Function**: `supabase/functions/biden-rag/index.ts`
+- **Runtime**: Deno
 
-## Performance Metrics
+### Database
+- **Platform**: Supabase PostgreSQL
+- **Extension**: pgvector for vector operations
+- **Table**: `biden_speech_chunks`
 
-### Indexing
-- Time: ~30 seconds
-- Chunks created: 53
-- Storage used: ~1MB
-- Cost: Free
+### APIs
+- **Groq**: LLM inference (llama-3.3-70b-versatile)
+- **Google AI Studio**: Embeddings (gemini-embedding-001)
+- **Supabase**: Vector database and Edge Functions
 
-### Querying
-- Embedding generation: ~0.5 seconds
-- Vector search: ~0.2 seconds
-- LLM generation: ~1-2 seconds
-- **Total: ~2-3 seconds per query**
-- Cost: Free (Groq) + negligible (Supabase)
+## Setup Instructions
 
-## Deployment Options
-
-### Replit (Recommended - Free)
-1. Go to https://replit.com
-2. Click "Create" → "Import from GitHub"
-3. Paste repository URL
-4. Add secrets for API keys
-5. Click "Run"
-
-### Docker
+### 1. Create Supabase Table
+Run the migration:
 ```bash
-docker-compose up
-# Access at http://localhost:5000
+supabase migration up
 ```
 
-### Heroku
+Or manually run the SQL in `supabase/migrations/20240011_biden_speech_rag.sql`
+
+### 2. Ingest Speech into Vector Database
 ```bash
-heroku create your-app-name
-git push heroku main
+cd scripts
+node ingest-biden-speech.mjs
 ```
+
+This script will:
+- Read `biden-sotu-2023-planned-official.txt`
+- Split into paragraphs
+- Generate embeddings using Google API
+- Store in Supabase with metadata
+
+### 3. Deploy Edge Function
+```bash
+supabase functions deploy biden-rag
+```
+
+### 4. Set Environment Variables
+In Supabase Edge Function settings, set:
+- `GROQ_API_KEY`: Your Groq API key
+- `GOOGLE_API_KEY`: Your Google AI Studio API key
+- `SUPABASE_URL`: Your Supabase project URL
+- `SERVICE_ROLE_KEY`: Your Supabase service role key
+
+### 5. Deploy Frontend
+Push to GitHub and enable GitHub Pages on the `main` branch.
+
+## Security Considerations
+
+- API keys stored in Supabase environment variables (not in code)
+- CORS headers configured for cross-origin requests
+- Supabase Row Level Security (RLS) for access control
+- Rate limiting on API endpoints (via Supabase)
+- No sensitive data stored in frontend
+- All API calls use HTTPS
+
+## Performance Characteristics
+
+- **Embedding Generation**: ~1-2 seconds per query (Google API)
+- **Semantic Search**: <100ms (Supabase pgvector)
+- **LLM Generation**: ~2-5 seconds (Groq API)
+- **Total Response Time**: ~5-8 seconds
+- **Concurrent Users**: Unlimited (serverless auto-scaling)
+
+## Scalability
+
+- Serverless architecture auto-scales with demand
+- Vector database optimized for semantic search
+- No infrastructure management required
+- Handles thousands of concurrent users
+- Minimal latency for global users
 
 ## Customization
 
+### Change Embedding Model
+Update in `ingest-biden-speech.mjs` and `supabase/functions/biden-rag/index.ts`:
+```javascript
+model: 'models/gemini-embedding-001' // Change this
+```
+
 ### Change LLM Model
-Edit `chatbot_final.py`:
-```python
-llm = ChatGroq(
-    model="mixtral-8x7b-32768",  # Change this
-    temperature=0.7,
-    groq_api_key=os.getenv("GROQ_API_KEY")
-)
+Update in `supabase/functions/biden-rag/index.ts`:
+```typescript
+model: 'llama-3.3-70b-versatile' // Change this
 ```
 
-### Adjust Chunk Size
-Edit `chatbot_final.py`:
-```python
-chunks = []
-current_chunk = ""
-for paragraph in text.split("\n\n"):
-    if len(current_chunk) + len(paragraph) > 1500:  # Change from 1000
-        if current_chunk:
-            chunks.append(current_chunk)
-        current_chunk = paragraph
+### Adjust Search Threshold
+Update in `supabase/functions/biden-rag/index.ts`:
+```typescript
+match_threshold: 0.65 // Increase for stricter matching
 ```
 
-### Modify Prompt
-Edit the prompt template in `chatbot_final.py`:
-```python
-prompt = f"""Your custom prompt here...
-Context:
-{context}
-
-Question: {question}
-
-Answer:"""
+### Change Number of Retrieved Chunks
+Update in `supabase/functions/biden-rag/index.ts`:
+```typescript
+match_count: 3 // Increase for more context
 ```
 
 ## Troubleshooting
 
-### "Could not find the table 'public.documents'"
-- Run the SQL setup in Supabase SQL Editor
-- Ensure you're using the Service Role Secret key, not Publishable Key
-
-### "Access denied" from Groq
-- Verify API key is correct
-- Check Groq console for active status
-- Ensure network allows API calls
-
-### Low similarity scores (0.3-0.4)
-- This is normal for cosine similarity
-- Scores indicate good semantic matches
-- Verify answers are still accurate
+### No results returned
+- Check if speech chunks are ingested: `SELECT COUNT(*) FROM biden_speech_chunks;`
+- Verify embedding dimensions match (should be 3072)
+- Lower the `match_threshold` value
 
 ### Slow responses
-- First query takes longer (model loading)
-- Subsequent queries are faster
-- Check internet connection
+- Check Groq API status
+- Verify network connectivity
+- Monitor Supabase query performance
 
-## Cost Analysis
-
-| Service | Cost |
-|---------|------|
-| Groq API | Free (unlimited) |
-| Supabase | Free (500MB storage) |
-| Sentence Transformers | Free (open source) |
-| **Total Monthly** | **Free** |
-
-**Scaling costs:**
-- 1,000 queries/month: Free
-- 10,000 queries/month: Free
-- 100,000 queries/month: Free (Groq) + minimal (Supabase)
-
-## Example Questions
-
-The chatbot can answer:
-- "What did Biden say about jobs?"
-- "What is the CHIPS Act?"
-- "How does Biden plan to address climate change?"
-- "What did Biden say about healthcare?"
-- "What did Biden say about infrastructure?"
-- "How does Biden address gun violence?"
-- "What did Biden say about education?"
+### Incorrect answers
+- Verify speech chunks are properly ingested
+- Check if question is actually related to the speech
+- Review retrieved chunks for relevance
 
 ## Future Enhancements
 
-- [ ] Multiple document support
-- [ ] User authentication
-- [ ] Chat history
-- [ ] Analytics dashboard
-- [ ] Custom prompt UI
-- [ ] Document upload feature
-- [ ] Export conversations
-- [ ] API rate limiting
-
-## License
-
-MIT License - See LICENSE file for details
+- Add support for multiple speeches
+- Implement caching for frequently asked questions
+- Add source citations with timestamps
+- Support for follow-up questions
+- Multi-language support
+- Analytics dashboard for query insights
