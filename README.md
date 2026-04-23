@@ -25,14 +25,37 @@ The system retrieves information from Supabase based on user queries about the S
 Ideal for researchers, journalists, educators, and the public for exploring political speeches via natural language queries. It showcases how retrieval and generation can be integrated in NLP to improve information access and understanding.
 
 ## Getting Started
-To get started with this project:
 
-1. Clone this repository to your local machine.
-2. Install the required dependencies: `pip install -r requirements.txt`
-3. Configure your API keys in `.env` file (see `.env.example`)
-4. Setup Supabase database (see ARCHITECTURE.md for SQL setup)
-5. **Run the setup script to index the speech**: `python setup_biden_rag.py`
-6. Visit the live demo: https://akhilchibber.github.io/RAG-BidenSpeech/
+### Live Demo
+Visit: https://akhilchibber.github.io/RAG-BidenSpeech/
+
+### Setup Instructions
+
+1. **Create Database Table**
+   - Go to Supabase Dashboard → SQL Editor
+   - Run the SQL from `supabase/migrations/20240011_biden_speech_rag.sql`
+
+2. **Deploy Edge Function**
+   - Go to Supabase Dashboard → Edge Functions
+   - Create new function: `biden-rag`
+   - Copy code from `supabase/functions/biden-rag/index.ts`
+   - Deploy
+
+3. **Set Environment Variables**
+   - In Edge Function settings, add:
+     - `GROQ_API_KEY`: Your Groq API key
+     - `GOOGLE_API_KEY`: Your Google API key (new one, old one is compromised)
+     - `SUPABASE_URL`: Your Supabase URL
+     - `SERVICE_ROLE_KEY`: Your Supabase service role key
+
+4. **Ingest Speech Data**
+   - Get a new Google API key from https://makersuite.google.com/app/apikey
+   - Update `.env` file with new key
+   - Run: `cd scripts && node ingest-biden-speech.mjs`
+
+5. **Test**
+   - Open: https://akhilchibber.github.io/RAG-BidenSpeech/
+   - Try: "What did Biden say about job creation?"
 
 ### Setup Instructions
 

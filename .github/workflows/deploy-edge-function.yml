@@ -1,0 +1,26 @@
+name: Deploy Edge Function
+
+on:
+  push:
+    paths:
+      - 'supabase/functions/biden-rag/**'
+      - '.github/workflows/deploy-edge-function.yml'
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Supabase
+        run: |
+          curl -X POST https://api.supabase.com/v1/projects/whtggoqezzijocarqavj/functions/biden-rag/deploy \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- << 'EOF'
+          {
+            "name": "biden-rag",
+            "source": "supabase/functions/biden-rag"
+          }
+          EOF

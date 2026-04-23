@@ -1,8 +1,19 @@
 import { readFileSync } from 'fs'
+import dotenv from 'dotenv'
 
-const SUPABASE_URL = 'https://whtggoqezzijocarqavj.supabase.co'
-const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndodGdnb3Flenppam9jYXJxYXZqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTQ3MTc2NywiZXhwIjoyMDkxMDQ3NzY3fQ.ZHHKXV7LAi8b-QYGqtjO1qtNdrLvHPJCo00lVIiCDlU'
-const GOOGLE_API_KEY = 'AIzaSyCQZFIhz-YSOsWjms6Wug7QwxlgIyTY80I'
+dotenv.config({ path: '../.env' })
+
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !GOOGLE_API_KEY) {
+  console.error('❌ Missing environment variables. Create a .env file with:')
+  console.error('   SUPABASE_URL')
+  console.error('   SUPABASE_SERVICE_KEY')
+  console.error('   GOOGLE_API_KEY')
+  process.exit(1)
+}
 
 function chunkDocument(text) {
   // Split by paragraphs (double newlines) and filter out empty chunks
@@ -28,7 +39,7 @@ async function embed(text) {
 }
 
 async function main() {
-  const doc = readFileSync('./biden-sotu-2023-planned-official.txt', 'utf-8')
+  const doc = readFileSync('../biden-sotu-2023-planned-official.txt', 'utf-8')
   const chunks = chunkDocument(doc)
   console.log(`📄 ${chunks.length} chunks to embed:`)
   chunks.forEach((c, i) => console.log(`  ${i+1}. ${c.slice(0, 80).replace(/\n/g, ' ')}...`))
