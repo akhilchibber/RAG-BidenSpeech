@@ -6,18 +6,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-async function callGroq(apiKey: string, prompt: string, maxTokens = 400, temperature = 0.0) {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+async function callOpenRouter(apiKey: string, prompt: string, maxTokens = 400, temperature = 0.0) {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://akhilchibber.github.io/RAG-BidenSpeech/',
+      'X-Title': 'RAG Biden SOTU Assistant'
+    },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: maxTokens,
       temperature
     })
   })
-  if (!res.ok) throw new Error(`Groq failed: ${await res.text()}`)
+  if (!res.ok) throw new Error(`OpenRouter failed: ${await res.text()}`)
   const data = await res.json()
   return data.choices[0].message.content.trim()
 }
@@ -33,7 +38,7 @@ serve(async (req) => {
       })
     }
 
-    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY')!
+    const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY')!
     const GOOGLE_API_KEY = Deno.env.get('GOOGLE_API_KEY')!
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
     const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY')!
@@ -47,7 +52,7 @@ Message: "${question}"
 
 Reply:`
 
-    const classification = await callGroq(GROQ_API_KEY, classifyPrompt, 5, 0.0)
+    const classification = await callOpenRouter(OPENROUTER_API_KEY, classifyPrompt, 5, 0.0)
     const isBiden = classification.trim().toUpperCase().startsWith('BIDEN')
 
     // Step 2a: General question — respond naturally and redirect
@@ -56,7 +61,7 @@ Reply:`
 
 Respond naturally and helpfully in 2-3 sentences. Acknowledge what they said, then gently let them know that your expertise is in the 2023 State of the Union speech and invite them to ask anything about the topics covered in that speech.`
 
-      const answer = await callGroq(GROQ_API_KEY, generalPrompt, 120, 0.7)
+      const answer = await callOpenRouter(OPENROUTER_API_KEY, generalPrompt, 120, 0.7)
       return new Response(JSON.stringify({ answer }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -113,7 +118,7 @@ User Question: ${question}
 
 Answer:`
 
-    const answer = await callGroq(GROQ_API_KEY, answerPrompt, 400, 0.0)
+    const answer = await callOpenRouter(OPENROUTER_API_KEY, answerPrompt, 400, 0.0)
 
     return new Response(JSON.stringify({ answer }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
